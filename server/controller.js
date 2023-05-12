@@ -1,57 +1,83 @@
-require('dotenv').config()
-const Sequelize = require('sequelize')
+require("dotenv").config();
+const Sequelize = require("sequelize");
 
-const {CONNECTION_STRING} = process.env
+const { CONNECTION_STRING } = process.env;
 
 const sequelize = new Sequelize(CONNECTION_STRING, {
-    dialect: 'postgres',
-    dialectOptions: {
-        ssl: {
-            rejectUnauthorized: false
-        }
-    }
-})
+  dialect: "postgres",
+  dialectOptions: {
+    ssl: {
+      rejectUnauthorized: false,
+    },
+  },
+});
 
 module.exports = {
-
-    getCountries: (req, res) => {
-        sequelize.query(`
+  getCountries: (req, res) => {
+    sequelize
+      .query(
+        `
             SELECT * FROM countries;
-        `)
-        .then((dbRes) => res.status(200).send(dbResponse[0]))
-        .catch()
-    },
+        `
+      )
+      .then((dbRes) => res.status(200).send(dbRes[0]))
+      .catch();
+  },
 
-    createCity: (req, res) => {
-        const {name, rating, countryId} = req.body
+  createCity: (req, res) => {
+    const { name, rating, countryId } = req.body;
 
-        sequelize.query(`
+    sequelize
+      .query(
+        `
             INSERT INTO
                 cities (name, rating, countryId)
             VALUES
                 (${name}, ${rating}, ${countryId});
-        `)
-        .then((dbRes) => res.status(200).send(dbResponse[0]))
-        .catch()
-    },
+        `
+      )
+      .then((dbRes) => res.status(200).send(dbRes[0]))
+      .catch();
+  },
 
-    getCities: (req, res) => {
-        sequelize.query(`
+  getCities: (req, res) => {
+    sequelize
+      .query(
+        `
             SELECT
-                cities.city_id AS id,
+                cities.city_id,
                 cities.name AS city,
+                cities.rating,
+                cities.countryId
                 countries.country_id,
                 countries.name AS country
             FROM cities
             JOIN countries
-            ON cities
+            ON cities.countryId = countries.country_id
+            `
+      )
+      .then((dbRes) => res.status(200).send(dbRes[0]))
+      .catch();
+  },
 
-        .then((dbRes) => res.status(200).send(dbResponse[0]))
-        .catch()
-    },
+  deleteCity: (req, res) => {
+    const city_id = req.params.city_id;
 
-    seed: (req, res) => {
-        sequelize.query(`
+    sequelize
+      .query(
+        `
+        DELETE FROM cities
+        WHERE id = ${city_id}
+        `
+      )
+      .then((dbRes) => res.status(200).send(dbRes[0]))
+      .catch();
+  },
+
+  seed: (req, res) => {
+    sequelize
+      .query(
+        `
             drop table if exists cities;
             drop table if exists countries;
 
@@ -263,9 +289,12 @@ module.exports = {
             ('Yemen'),
             ('Zambia'),
             ('Zimbabwe');
-        `).then(() => {
-            console.log('DB seeded!')
-            res.sendStatus(200)
-        }).catch(err => console.log('error seeding DB', err))
-    }
-}
+        `
+      )
+      .then(() => {
+        console.log("DB seeded!");
+        res.sendStatus(200);
+      })
+      .catch((err) => console.log("error seeding DB", err));
+  },
+};
